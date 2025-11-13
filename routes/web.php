@@ -29,4 +29,6 @@ Route::middleware(['auth'])->group(function () {
             ),
         )
         ->name('two-factor.show');
+    Route::post('ai/model', [\App\Http\Controllers\AIModelController::class, 'set'])->name('ai.model.set');
+    Route::post('chat/send', [\App\Http\Controllers\ChatController::class, 'send'])->name('chat.send');
 });

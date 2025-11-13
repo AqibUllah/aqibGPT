@@ -11,6 +11,16 @@
                 <x-app-logo />
             </a>
 
+            <form method="POST" action="{{ route('ai.model.set') }}" class="w-44">
+                @csrf
+                @php($currentModel = session('ai_model', config('ai.default')))
+                <flux:select name="ai_model" size="sm" class="w-44" onchange="this.form.submit()">
+                    <option value="ai-studio" {{ $currentModel === 'ai-studio' ? 'selected' : '' }}>Ai Studio</option>
+                    <option value="gemini" {{ $currentModel === 'gemini' ? 'selected' : '' }}>Gemini</option>
+                    <option value="openai" {{ $currentModel === 'openai' ? 'selected' : '' }}>OpenAI</option>
+                </flux:select>
+            </form>
+
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>

@@ -64,3 +64,57 @@ select:focus[data-flux-control] {
 /* \[:where(&)\]:size-4 {
     @apply size-4;
 } */
+
+
+
+
+.message-container {
+        scrollbar-width: thin;
+        scrollbar-color: rgba(156, 163, 175, 0.5) transparent;
+    }
+    .message-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    .message-container::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .message-container::-webkit-scrollbar-thumb {
+        background-color: rgba(156, 163, 175, 0.5);
+        border-radius: 20px;
+    }
+    .typing-indicator {
+        display: inline-block;
+        position: relative;
+        width: 60px;
+        height: 20px;
+    }
+    .typing-indicator span {
+        position: absolute;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #9ca3af;
+        animation: typing 1.4s infinite ease-in-out;
+    }
+    .typing-indicator span:nth-child(1) {
+        left: 0;
+        animation-delay: 0s;
+    }
+    .typing-indicator span:nth-child(2) {
+        left: 15px;
+        animation-delay: 0.2s;
+    }
+    .typing-indicator span:nth-child(3) {
+        left: 30px;
+        animation-delay: 0.4s;
+    }
+    @keyframes typing {
+        0%, 60%, 100% {
+            transform: translateY(0);
+            opacity: 0.5;
+        }
+        30% {
+            transform: translateY(-10px);
+            opacity: 1;
+        }
+    }
