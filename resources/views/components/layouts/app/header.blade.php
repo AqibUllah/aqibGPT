@@ -3,6 +3,7 @@
 
 <head>
     @include('partials.head')
+    @notifyCss
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
@@ -129,7 +130,9 @@
 
     {{ $slot }}
 
+    <x-notify::notify />
     @fluxScripts
+    @notifyJs
 </body>
 
 </html>

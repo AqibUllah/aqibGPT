@@ -5,8 +5,8 @@ use function Livewire\Volt\{state, mount, rules};
 use Illuminate\Support\Collection;
 
 new class extends Component {
-    
-    public $messages;
+
+    public $messages = [];
     public $conversationId;
 
     /**
@@ -28,13 +28,13 @@ new class extends Component {
             ]);
         }
     }
-    
 
-}; 
+
+};
 
 
 // State for user input and the message history
-state(['prompt' => '', 'messages' => null, 'conversationId' => null]);
+state(['prompt' => '', 'messages' => [], 'conversationId' => null]);
 
 // Rules for input validation
 rules(['prompt' => ['required', 'string', 'max:2000']]);
@@ -44,26 +44,26 @@ rules(['prompt' => ['required', 'string', 'max:2000']]);
 // The core action to send the message and get the AI response
 $send = function () {
     // 1. Validate the user input
-    $this->validate();
+    $this->validate([
+        'prompt'    => 'required|string'
+    ]);
 
     $userPrompt = $this->prompt;
-    
+
     // 2. Add the user's message to the state
-    $this->messages->push(['role' => 'user', 'text' => $userPrompt]);
+    $this->messages[] = ['role' => 'user', 'text' => $userPrompt];
     $this->prompt = ''; // Clear input immediately
-    
+
     // 3. Trigger component refresh/scroll before the AI response (optional, for UX)
-    $this->skipRender(); 
+    $this->skipRender();
     $this->js('document.getElementById("chatContainer").scrollTop = document.getElementById("chatContainer").scrollHeight');
 
     // 4. Call the Chat Controller (The actual implementation goes here)
     // NOTE: Replace the $this->getAiResponse() call with your actual controller logic.
-    // Example: $controller = app(\App\Http\Controllers\ChatController::class);
-    // $aiResponseText = $controller->handle($userPrompt, $this->conversationId);
-    $aiResponseText = $this->simulateAiResponse($userPrompt);
+    $controller = app(\App\Http\Controllers\ChatController::class);
 
     // 5. Add the AI response to the state
-    $this->messages->push(['role' => 'bot', 'text' => $aiResponseText]);
+//    $this->messages[] = ['role' => 'bot', 'text' => $aiResponseText];
 
     // 6. Force a final scroll after receiving the response
     $this->js('document.getElementById("chatContainer").scrollTop = document.getElementById("chatContainer").scrollHeight');
@@ -73,7 +73,7 @@ $send = function () {
 // Helper function to simulate the AI response (Replace this with your ChatController call)
 $simulateAiResponse = function (string $prompt): string {
     // --- THIS IS WHERE YOU INTEGRATE YOUR CHAT CONTROLLER ---
-    
+
     // Example logic to demonstrate a dynamic response:
     if (stripos($prompt, 'volt') !== false) {
         return "Laravel Volt is a functional API for Livewire that supports single-file components. It helps reduce boilerplate and keeps PHP logic and Blade templates colocated.";
@@ -86,15 +86,16 @@ $simulateAiResponse = function (string $prompt): string {
 
 ?>
 
-<div class=" dark:text-white text-neutral-500 flex items-center justify-center px-6" id="chat-interface-{{ $conversationId ?? 'default' }}">
+<div class=" dark:text-white text-neutral-500 flex items-center justify-center px-6"
+     id="chat-interface-{{ $conversationId ?? 'default' }}">
 
     <div class="w-full max-w-2xl">
 
         <h1 class="text-3xl md:text-4xl font-extrabold tracking-tight text-center">How can I help you today?</h1>
 
 
-
-        <div id="chatContainer-{{ $conversationId ?? 'default' }}" class="mt-8 {{ isset($messages) && $messages->count() > 0 ? '' : 'hidden' }}">
+        <div id="chatContainer-{{ $conversationId ?? 'default' }}"
+             class="mt-8 {{ isset($messages) && count($messages) > 0 ? '' : 'hidden' }}">
 
             <div id="messages-{{ $conversationId ?? 'default' }}" class="space-y-4"></div>
 
@@ -103,20 +104,22 @@ $simulateAiResponse = function (string $prompt): string {
         </div>
 
 
-
         <div class="mt-6">
 
-            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">
+            {{--            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">--}}
+            <form id="chatForm-{{ $conversationId ?? 'default' }}" wire:submit.prevent="send">
 
                 @csrf
 
                 <div class="relative">
 
-                    <div class="flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-xl shadow-sm">
+                    <div
+                        class="flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-xl shadow-sm">
 
                         <input
 
                             type="text"
+                            wire:model="prompt"
 
                             id="messageInput-{{ $conversationId ?? 'default' }}"
 
@@ -158,7 +161,7 @@ $simulateAiResponse = function (string $prompt): string {
 
 <script>
     // Simple JavaScript to ensure the chat scrolls to the bottom on load
-    window.onload = function() {
+    window.onload = function () {
         const chatContainer = document.getElementById('chatContainer');
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;

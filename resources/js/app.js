@@ -1,5 +1,6 @@
 window.sendMessage = async function (e, conversationId) {
   e.preventDefault();
+  console.log('here')
   const input = document.getElementById(`messageInput-${conversationId}`);
   const container = document.getElementById(`messages-${conversationId}`);
   const typing = document.getElementById(`typingIndicator-${conversationId}`);

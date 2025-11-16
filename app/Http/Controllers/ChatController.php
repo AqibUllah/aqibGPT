@@ -15,7 +15,7 @@ class ChatController extends Controller
         ]);
 
         try {
-       
+
             $service = new ChatService();
             $response = $service->respond($data['message']);
 
@@ -24,6 +24,13 @@ class ChatController extends Controller
          } catch (\Exception $e) {
             // Log the error and return a friendly error response
             Log::error('GPT API Error: ' . $e->getMessage());
+
+            smilify('success', 'You are successfully reconnected');
+                notify()->preset('common-notification');
+            notify()->success('Laravel Notify is awesome!');
+
+            drakify('success'); // for success alert
+            drakify('error'); // for error alert
 
             return response()->json([
                 'status' => 'error',
