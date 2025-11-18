@@ -33,8 +33,7 @@ new class extends Component {
 };
 
 
-// State for user input and the message history
-state(['prompt' => '', 'messages' => [], 'conversationId' => null]);
+state(['prompt' => '', 'messages' => []]);
 
 // Rules for input validation
 rules(['prompt' => ['required', 'string', 'max:2000']]);
@@ -43,30 +42,33 @@ rules(['prompt' => ['required', 'string', 'max:2000']]);
 
 // The core action to send the message and get the AI response
 $send = function () {
-    // 1. Validate the user input
     $this->validate([
-        'prompt'    => 'required|string'
+        'prompt' => 'required|string'
     ]);
 
-    $userPrompt = $this->prompt;
+    $userPrompt = trim($this->prompt);
+    if ($userPrompt === '') {
+        return;
+    }
 
-    // 2. Add the user's message to the state
     $this->messages[] = ['role' => 'user', 'text' => $userPrompt];
-    $this->prompt = ''; // Clear input immediately
+    $this->prompt = '';
 
-    // 3. Trigger component refresh/scroll before the AI response (optional, for UX)
-    $this->skipRender();
-    $this->js('document.getElementById("chatContainer").scrollTop = document.getElementById("chatContainer").scrollHeight');
+    try {
+        $request = new \Illuminate\Http\Request(['message' => $userPrompt]);
+        $controller = app(\App\Http\Controllers\ChatController::class);
+        $json = $controller->send($request);
+        $data = method_exists($json, 'getData') ? $json->getData(true) : (array)$json;
+        $aiText = $data['content'] ?? ($data['message'] ?? '');
+        if ($aiText !== '') {
+            $this->messages[] = ['role' => 'bot', 'text' => $aiText];
+        }
+    } catch (\Throwable $e) {
+        $this->messages[] = ['role' => 'bot', 'text' => 'Sorry, something went wrong. <br>'.$e->getMessage()];
+    }
 
-    // 4. Call the Chat Controller (The actual implementation goes here)
-    // NOTE: Replace the $this->getAiResponse() call with your actual controller logic.
-    $controller = app(\App\Http\Controllers\ChatController::class);
-
-    // 5. Add the AI response to the state
-//    $this->messages[] = ['role' => 'bot', 'text' => $aiResponseText];
-
-    // 6. Force a final scroll after receiving the response
-    $this->js('document.getElementById("chatContainer").scrollTop = document.getElementById("chatContainer").scrollHeight');
+    $id = $this->conversationId ?? 'default';
+    $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "'); if(el){el.scrollTop=el.scrollHeight;}})();");
 };
 
 
@@ -97,7 +99,17 @@ $simulateAiResponse = function (string $prompt): string {
         <div id="chatContainer-{{ $conversationId ?? 'default' }}"
              class="mt-8 {{ isset($messages) && count($messages) > 0 ? '' : 'hidden' }}">
 
-            <div id="messages-{{ $conversationId ?? 'default' }}" class="space-y-4"></div>
+            <div id="messages-{{ $conversationId ?? 'default' }}" class="space-y-4">
+                @foreach(($messages ?? []) as $m)
+                    <div class="flex {{ ($m['role'] ?? '') === 'user' ? 'justify-end' : 'justify-start' }}">
+                        <div class="flex items-start max-w-[80%]">
+                            <div class="{{ ($m['role'] ?? '') === 'user' ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-gray-700 dark:text-white' }} rounded-2xl px-4 py-3 shadow-sm">
+                                <p>{!! $m['text'] ?? '' !!}</p>
+                            </div>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
 
             <div id="typingIndicator-{{ $conversationId ?? 'default' }}" class="hidden"></div>
 
@@ -162,7 +174,7 @@ $simulateAiResponse = function (string $prompt): string {
 <script>
     // Simple JavaScript to ensure the chat scrolls to the bottom on load
     window.onload = function () {
-        const chatContainer = document.getElementById('chatContainer');
+        const chatContainer = document.getElementById('chatContainer-{{ $conversationId ?? 'default' }}');
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }

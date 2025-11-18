@@ -26,15 +26,11 @@ class ChatController extends Controller
             Log::error('GPT API Error: ' . $e->getMessage());
 
             smilify('success', 'You are successfully reconnected');
-                notify()->preset('common-notification');
             notify()->success('Laravel Notify is awesome!');
-
-            drakify('success'); // for success alert
-            drakify('error'); // for error alert
 
             return response()->json([
                 'status' => 'error',
-                'message' => 'Sorry, an error occurred while processing your request.',
+                'message' => 'Sorry, an error occurred while processing your request. Please try again later. '.$e->getMessage(),
                 'details' => $e->getMessage(),
             ], 500);
         }
