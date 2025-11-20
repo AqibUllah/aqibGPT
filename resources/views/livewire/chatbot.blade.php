@@ -3,6 +3,7 @@
 use Livewire\Volt\Component;
 use function Livewire\Volt\{state, mount, rules};
 use Illuminate\Support\Collection;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 new class extends Component {
 
@@ -63,8 +64,15 @@ $send = function () {
         if ($aiText !== '') {
             $this->messages[] = ['role' => 'bot', 'text' => $aiText];
         }
+         LivewireAlert::title('Error!')
+        ->error()
+        ->show();
     } catch (\Throwable $e) {
         $this->messages[] = ['role' => 'bot', 'text' => 'Sorry, something went wrong. <br>'.$e->getMessage()];
+
+        LivewireAlert::title('Error!')
+        ->error()
+        ->show();
     }
 
     $id = $this->conversationId ?? 'default';
@@ -87,6 +95,7 @@ $simulateAiResponse = function (string $prompt): string {
 };
 
 ?>
+
 
 <div class=" dark:text-white text-neutral-500 flex items-center justify-center px-6"
      id="chat-interface-{{ $conversationId ?? 'default' }}">
