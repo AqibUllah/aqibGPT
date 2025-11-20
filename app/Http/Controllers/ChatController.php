@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Services\AI\ChatService;
 use Illuminate\Support\Facades\Log;
+use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 
 class ChatController extends Controller
 {
@@ -17,7 +18,7 @@ class ChatController extends Controller
         try {
 
             $service = new ChatService();
-            $response = $service->respond($data['message']);
+            $response = $service->respond($data['message'],[],['stream' => true]);
 
             return response()->json($response);
 
@@ -25,8 +26,9 @@ class ChatController extends Controller
             // Log the error and return a friendly error response
             Log::error('GPT API Error: ' . $e->getMessage());
 
-            smilify('success', 'You are successfully reconnected');
-            notify()->success('Laravel Notify is awesome!');
+            LivewireAlert::title('Error!')
+            ->error()
+            ->show();
 
             return response()->json([
                 'status' => 'error',
