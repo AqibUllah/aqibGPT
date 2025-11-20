@@ -2,6 +2,25 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
+        <style>
+            .bot-stream {
+                white-space: pre-wrap;
+                word-break: break-word;
+            }
+            pre {
+                background: #1e1e1e;
+                color: #e5e5e5;
+                padding: 12px;
+                border-radius: 8px;
+                overflow-x: auto;
+                margin-top: 6px;
+                margin-bottom: 6px;
+            }
+            code {
+                font-size: 0.9rem;
+                font-family: Consolas, monospace;
+            }
+        </style>
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
         <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
