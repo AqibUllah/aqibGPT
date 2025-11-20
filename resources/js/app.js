@@ -1,3 +1,7 @@
+import Swal from 'sweetalert2'
+
+window.Swal = Swal
+
 window.sendMessage = async function (e, conversationId) {
   e.preventDefault();
   console.log('here')
