@@ -12,12 +12,13 @@
         "php": "^8.2",
         "cloudstudio/ollama-laravel": "^1.1",
         "google-gemini-php/laravel": "^2.0",
+        "jantinnerezo/livewire-alert": "^4.0",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
         "laravel/tinker": "^2.10.1",
+        "league/commonmark": "^2.7",
         "livewire/flux": "^2.1.1",
         "livewire/volt": "^1.7.0",
-        "mckenziearts/laravel-notify": "^2.7",
         "openai-php/laravel": "^0.18.0"
     },
     "require-dev": {

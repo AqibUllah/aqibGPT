@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "bf506e95666fc0f81d957767519a3dd6",
+    "content-hash": "5b14d9ab0c221d0075a86dcda3cd2e35",
     "packages": [
         {
             "name": "bacon/bacon-qr-code",
@@ -1362,6 +1362,70 @@
             "time": "2025-08-22T14:27:06+00:00"
         },
         {
+            "name": "jantinnerezo/livewire-alert",
+            "version": "v4.0.7",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jantinnerezo/livewire-alert.git",
+                "reference": "d85e7d53d49251e8a9cbe8586492ac98ac86fa48"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jantinnerezo/livewire-alert/zipball/d85e7d53d49251e8a9cbe8586492ac98ac86fa48",
+                "reference": "d85e7d53d49251e8a9cbe8586492ac98ac86fa48",
+                "shasum": ""
+            },
+            "require": {
+                "illuminate/support": "^10.0|^11.0|^12.0",
+                "livewire/livewire": "^3.0",
+                "php": "^8.1"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.70",
+                "orchestra/testbench": "^8.0|^9.0|^10.0",
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^9.5|^10.0|^11.5.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "aliases": {
+                        "LivewireAlert": "Jantinnerezo\\LivewireAlert\\LivewireAlert"
+                    },
+                    "providers": [
+                        "Jantinnerezo\\LivewireAlert\\LivewireAlertServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Jantinnerezo\\LivewireAlert\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Jantinn Erezo",
+                    "email": "erezojantinn@gmail.com",
+                    "role": "Developer"
+                }
+            ],
+            "description": "This package provides a simple alert utilities for your livewire components.",
+            "homepage": "https://github.com/jantinnerezo/livewire-alert",
+            "keywords": [
+                "jantinnerezo",
+                "livewire-alert"
+            ],
+            "support": {
+                "issues": "https://github.com/jantinnerezo/livewire-alert/issues",
+                "source": "https://github.com/jantinnerezo/livewire-alert/tree/v4.0.7"
+            },
+            "time": "2025-09-30T18:13:12+00:00"
+        },
+        {
             "name": "laravel/fortify",
             "version": "v1.31.2",
             "source": {
@@ -2595,76 +2659,6 @@
                 "source": "https://github.com/livewire/volt"
             },
             "time": "2025-10-30T02:46:00+00:00"
-        },
-        {
-            "name": "mckenziearts/laravel-notify",
-            "version": "v2.7",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/mckenziearts/laravel-notify.git",
-                "reference": "1b40ba9e6c9ebed08d84629377ebc5ac9dc8ec2b"
-            },
-            "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/mckenziearts/laravel-notify/zipball/1b40ba9e6c9ebed08d84629377ebc5ac9dc8ec2b",
-                "reference": "1b40ba9e6c9ebed08d84629377ebc5ac9dc8ec2b",
-                "shasum": ""
-            },
-            "require": {
-                "illuminate/support": "^8.0|^9.0|^10.0|^11.0|^12.0",
-                "php": "~8.0"
-            },
-            "require-dev": {
-                "laravel/pint": "^1.6",
-                "mockery/mockery": "^1.0",
-                "phpunit/phpunit": "^8.0|^9.0|^10.5"
-            },
-            "type": "library",
-            "extra": {
-                "laravel": {
-                    "aliases": {
-                        "Notify": "Mckenziearts\\Notify\\Facades\\LaravelNotify"
-                    },
-                    "providers": [
-                        "Mckenziearts\\Notify\\LaravelNotifyServiceProvider"
-                    ]
-                }
-            },
-            "autoload": {
-                "files": [
-                    "src/helpers.php"
-                ],
-                "psr-4": {
-                    "Mckenziearts\\Notify\\": "src/"
-                }
-            },
-            "notification-url": "https://packagist.org/downloads/",
-            "license": [
-                "MIT"
-            ],
-            "authors": [
-                {
-                    "name": "Arthur Monney",
-                    "email": "monneylobe@gmail.com"
-                }
-            ],
-            "description": "Flexible flash notifications for Laravel",
-            "keywords": [
-                "laravel",
-                "laravel-notify",
-                "notification"
-            ],
-            "support": {
-                "issues": "https://github.com/mckenziearts/laravel-notify/issues",
-                "source": "https://github.com/mckenziearts/laravel-notify"
-            },
-            "funding": [
-                {
-                    "url": "https://paypal.me/jvquilichini?locale.x=fr_FR",
-                    "type": "custom"
-                }
-            ],
-            "time": "2025-03-06T17:12:38+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -10471,12 +10465,12 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": [],
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
         "php": "^8.2"
     },
-    "platform-dev": {},
+    "platform-dev": [],
     "plugin-api-version": "2.6.0"
 }
