@@ -17,10 +17,38 @@ class OpenAIStrategy implements ChatModelStrategy
     public function respond(string $prompt, array $context = [], array $options = []): array
     {
         $model = $this->config['model'] ?? 'gpt-4o-mini';
-        $response = OpenAI::responses()->create(array_merge([
+        $stream = ($options['stream'] ?? false) === true;
+        $onChunk = $options['on_chunk'] ?? null;
+
+        if ($stream) {
+            $buffer = '';
+            $streamResponse = OpenAI::responses()->createStreamed([
+                'model' => $model,
+                'input' => $prompt,
+            ]);
+
+            foreach ($streamResponse as $event) {
+                if ($event->event === 'response.output_text.delta') {
+                    $text = $event->response->delta;
+                    if ($text) {
+                        $buffer .= $text;
+                        if (is_callable($onChunk)) {
+                            $onChunk($text);
+                        }
+                    }
+                }
+            }
+
+            return [
+                'model' => $model,
+                'content' => $buffer,
+            ];
+        }
+
+        $response = OpenAI::responses()->create([
             'model' => $model,
             'input' => $prompt,
-        ], $options));
+        ]);
 
         return [
             'model' => $model,

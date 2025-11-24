@@ -25,13 +25,43 @@ window.sendMessage = async function (e, conversationId) {
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
       body: JSON.stringify({ message }),
     });
-    const data = await res.json();
-    typing && typing.classList.add('hidden');
+
     const aiBubble = document.createElement('div');
     aiBubble.className = 'flex justify-start';
-    aiBubble.innerHTML = `<div class="flex items-start max-w-[80%]"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0">AI</div><div class="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3 shadow-sm"><p>${escapeHtml(data.content || '')}</p><p class="text-xs text-gray-500 mt-1">${data.model || ''}</p></div></div>`;
+    const aiTextId = `aiText-${conversationId}-${Date.now()}`;
+    aiBubble.innerHTML = `<div class="flex items-start max-w-[80%]"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0">AI</div><div class="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3 shadow-sm"><p id="${aiTextId}"></p></div></div>`;
     container.appendChild(aiBubble);
-    container.parentElement.scrollTop = container.parentElement.scrollHeight;
+
+    const decoder = new TextDecoder();
+    const reader = res.body.getReader();
+    let buffer = '';
+    const target = document.getElementById(aiTextId);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+
+      const chunks = buffer.split('\n\n');
+      buffer = chunks.pop();
+      for (const chunk of chunks) {
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') {
+              typing && typing.classList.add('hidden');
+              break;
+            }
+            if (target) {
+              target.textContent += data;
+              container.parentElement.scrollTop = container.parentElement.scrollHeight;
+            }
+          }
+        }
+      }
+    }
+    typing && typing.classList.add('hidden');
   } catch (err) {
     typing && typing.classList.add('hidden');
   }

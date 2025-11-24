@@ -4,6 +4,7 @@ use Livewire\Volt\Component;
 use function Livewire\Volt\{state, mount, rules};
 use Illuminate\Support\Collection;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
+use League\CommonMark\CommonMarkConverter;
 
 new class extends Component {
 
@@ -64,9 +65,6 @@ $send = function () {
         if ($aiText !== '') {
             $this->messages[] = ['role' => 'bot', 'text' => $aiText];
         }
-         LivewireAlert::title('Error!')
-        ->error()
-        ->show();
     } catch (\Throwable $e) {
         $this->messages[] = ['role' => 'bot', 'text' => 'Sorry, something went wrong. <br>'.$e->getMessage()];
 
@@ -113,7 +111,22 @@ $simulateAiResponse = function (string $prompt): string {
                     <div class="flex {{ ($m['role'] ?? '') === 'user' ? 'justify-end' : 'justify-start' }}">
                         <div class="flex items-start max-w-[80%]">
                             <div class="{{ ($m['role'] ?? '') === 'user' ? 'bg-gradient-to-r from-blue-500 to-indigo-600 text-white' : 'bg-neutral-100 dark:bg-neutral-800 text-gray-700 dark:text-white' }} rounded-2xl px-4 py-3 shadow-sm">
-                                <p>{!! $m['text'] ?? '' !!}</p>
+                                @php
+                                    if (!function_exists('render_markdown')) {
+                                        function render_markdown(string $text): string {
+                                            static $converter = null;
+                                            if ($converter === null) {
+                                                $converter = new CommonMarkConverter([
+                                                    'html_input' => 'strip',
+                                                    'allow_unsafe_links' => false,
+                                                ]);
+                                            }
+                                            return $converter->convert($text)->getContent();
+                                        }
+                                    }
+                                    $html = render_markdown($m['text'] ?? '');
+                                @endphp
+                                {!! $html !!}
                             </div>
                         </div>
                     </div>
@@ -127,8 +140,7 @@ $simulateAiResponse = function (string $prompt): string {
 
         <div class="mt-6">
 
-            {{--            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">--}}
-            <form id="chatForm-{{ $conversationId ?? 'default' }}" wire:submit.prevent="send">
+            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">
 
                 @csrf
 
