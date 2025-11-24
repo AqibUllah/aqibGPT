@@ -1,5 +1,5 @@
 import Swal from 'sweetalert2'
-
+import { marked } from "marked";
 window.Swal = Swal
 
 window.sendMessage = async function (e, conversationId) {
@@ -29,12 +29,13 @@ window.sendMessage = async function (e, conversationId) {
     const aiBubble = document.createElement('div');
     aiBubble.className = 'flex justify-start';
     const aiTextId = `aiText-${conversationId}-${Date.now()}`;
-    aiBubble.innerHTML = `<div class="flex items-start max-w-[80%]"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0">AI</div><div class="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3 shadow-sm"><p id="${aiTextId}"></p></div></div>`;
+    aiBubble.innerHTML = `<div class="flex items-start max-w-[80%]"><div class="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-indigo-600 flex items-center justify-center text-white text-xs font-bold mr-2 flex-shrink-0">AI</div><div class="bg-gray-100 text-gray-800 rounded-2xl px-4 py-3 shadow-sm"><div id="${aiTextId}" class="bot-stream"></div></div></div>`;
     container.appendChild(aiBubble);
 
     const decoder = new TextDecoder();
     const reader = res.body.getReader();
     let buffer = '';
+    let fullText = '';
     const target = document.getElementById(aiTextId);
 
     while (true) {
@@ -50,9 +51,13 @@ window.sendMessage = async function (e, conversationId) {
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
             if (data === '[DONE]') {
+              if (target) {
+                target.innerHTML = renderMarkdown(fullText);
+              }
               typing && typing.classList.add('hidden');
               break;
             }
+            fullText += data;
             if (target) {
               target.textContent += data;
               container.parentElement.scrollTop = container.parentElement.scrollHeight;
@@ -73,4 +78,23 @@ function escapeHtml(str) {
     const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' };
     return map[s] || s;
   });
+}
+
+function renderMarkdown(text) {
+  try {
+    let html = escapeHtml(text);
+    html = html.replace(/```([a-zA-Z0-9_+-]*)\n([\s\S]*?)```/g, function (_, lang, code) {
+      const language = lang ? `language-${lang}` : '';
+      return `<pre><code class="${language}">${escapeHtml(code)}</code></pre>`;
+    });
+    html = html.replace(/`([^`]+)`/g, function (_, code) {
+      return `<code>${escapeHtml(code)}</code>`;
+    });
+    html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+    html = html.replace(/^\s*\#\s+(.+)$/gm, '<h3>$1</h3>');
+    return html;
+  } catch (e) {
+    return escapeHtml(text);
+  }
 }
