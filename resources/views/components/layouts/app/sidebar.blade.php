@@ -40,6 +40,26 @@
                 </flux:select>
             </form>
 
+            @php($sessions = \App\Models\ChatSession::where('user_id', auth()->id())->latest()->limit(50)->get())
+            <div class="mt-4">
+                <flux:heading size="md">{{ __('Your Chats') }}</flux:heading>
+                <div class="mt-2 flex items-center gap-2">
+                    <button type="button" onclick="return newChat(event)" class="inline-flex items-center gap-2 px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700">
+                        <span class="inline-block w-4 h-4">+</span>
+                        <span>{{ __('New Chat') }}</span>
+                    </button>
+                </div>
+                <div id="sessionsList" class="mt-2 space-y-1">
+                    @forelse($sessions as $s)
+                        <a href="{{ route('dashboard', ['session' => $s->uuid]) }}" class="block px-2 py-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800" wire:navigate>
+                            {{ $s->title ?? \Illuminate\Support\Str::limit($s->uuid, 8) }}
+                        </a>
+                    @empty
+                        <div class="text-sm text-zinc-500">{{ __('No chats yet') }}</div>
+                    @endforelse
+                </div>
+            </div>
+
             <flux:navlist variant="outline">
                 <flux:navlist.group :heading="__('Platform')" class="grid">
                     <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>

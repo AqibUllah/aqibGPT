@@ -23,7 +23,7 @@ window.sendMessage = async function (e, conversationId) {
     const res = await fetch('/chat/send', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
-      body: JSON.stringify({ message }),
+      body: JSON.stringify({ message, conversation_id: conversationId }),
     });
 
     const aiBubble = document.createElement('div');
@@ -36,6 +36,8 @@ window.sendMessage = async function (e, conversationId) {
     const reader = res.body.getReader();
     let buffer = '';
     let fullText = '';
+    let lastEvent = null;
+    let createdSession = null;
     const target = document.getElementById(aiTextId);
 
     while (true) {
@@ -48,13 +50,34 @@ window.sendMessage = async function (e, conversationId) {
       for (const chunk of chunks) {
         const lines = chunk.split('\n');
         for (const line of lines) {
+          if (line.startsWith('event: ')) {
+            lastEvent = line.slice(7).trim();
+            continue;
+          }
           if (line.startsWith('data: ')) {
             const data = line.slice(6);
+            if (lastEvent === 'session') {
+              try {
+                createdSession = JSON.parse(data);
+              } catch (e) {}
+              lastEvent = null;
+              continue;
+            }
             if (data === '[DONE]') {
               if (target) {
                 target.innerHTML = renderMarkdown(fullText);
               }
               typing && typing.classList.add('hidden');
+              if (createdSession && createdSession.new) {
+                const list = document.getElementById('sessionsList');
+                if (list) {
+                  const a = document.createElement('a');
+                  a.href = `/dashboard?session=${createdSession.uuid}`;
+                  a.className = 'block px-2 py-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800';
+                  a.textContent = createdSession.title || createdSession.uuid;
+                  list.prepend(a);
+                }
+              }
               break;
             }
             fullText += data;
@@ -98,3 +121,28 @@ function renderMarkdown(text) {
     return escapeHtml(text);
   }
 }
+
+window.newChat = async function (e) {
+  e && e.preventDefault();
+  const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+  try {
+    const res = await fetch('/chat/session/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token },
+      body: JSON.stringify({}),
+    });
+    const data = await res.json();
+    const list = document.getElementById('sessionsList');
+    if (list) {
+      const a = document.createElement('a');
+      a.href = `/dashboard?session=${data.uuid}`;
+      a.className = 'block px-2 py-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800';
+      a.textContent = data.title || data.uuid;
+      list.prepend(a);
+    }
+    window.location.href = `/dashboard?session=${data.uuid}`;
+    return false;
+  } catch (err) {
+    return false;
+  }
+};

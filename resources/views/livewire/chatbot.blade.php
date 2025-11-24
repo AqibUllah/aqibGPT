@@ -35,7 +35,20 @@ new class extends Component {
 };
 
 
-state(['prompt' => '', 'messages' => []]);
+state(['prompt' => '', 'messages' => [],'conversationId']);
+mount(function () {
+    $uuid = request('session');
+    if ($uuid) {
+        $this->conversationId = $uuid;
+        $session = \App\Models\ChatSession::where('uuid', $uuid)->where('user_id', auth()->id())->first();
+        if ($session) {
+            $msgs = \App\Models\ChatMessage::where('chat_session_id', $session->id)->orderBy('id')->get();
+            $this->messages = $msgs->map(function ($m) {
+                return ['role' => $m->role, 'text' => $m->content];
+            })->toArray();
+        }
+    }
+});
 
 // Rules for input validation
 rules(['prompt' => ['required', 'string', 'max:2000']]);
