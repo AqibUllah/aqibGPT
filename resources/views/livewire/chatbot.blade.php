@@ -3,8 +3,10 @@
 use Livewire\Volt\Component;
 use function Livewire\Volt\{state, mount, rules};
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use League\CommonMark\CommonMarkConverter;
+use App\Services\AI\ChatService;
 
 new class extends Component {
 
@@ -35,7 +37,7 @@ new class extends Component {
 };
 
 
-state(['prompt' => '', 'messages' => [],'conversationId']);
+state(['prompt' => '', 'messages' => [],'conversationId', 'isStreaming' => false, 'streamedContent' => '']);
 mount(function () {
     $uuid = request('session');
     if ($uuid) {
@@ -58,51 +60,158 @@ rules(['prompt' => ['required', 'string', 'max:2000']]);
 // The core action to send the message and get the AI response
 $send = function () {
     $this->validate([
-        'prompt' => 'required|string'
+        'prompt' => 'required|string',
+//        'conversationId' => 'nullable|string',
     ]);
 
-    $userPrompt = trim($this->prompt);
-    if ($userPrompt === '') {
+    $this->prompt = trim($this->prompt);
+    if ($this->prompt === '') {
         return;
     }
 
-    $this->messages[] = ['role' => 'user', 'text' => $userPrompt];
-    $this->prompt = '';
+    $this->messages[] = ['role' => 'user', 'text' => $this->prompt];
+    $this->isStreaming = true;
+    $this->streamedContent = '';
+
+    // Add placeholder for bot message
+    $this->messages[] = ['role' => 'bot', 'text' => '', 'streaming' => true];
+
+    $this->js('$wire.ask()');
+
+    };
+
+$ask = function()
+{
+    $this->js("scrollToBottom('{$this->conversationId}')");
 
     try {
-        $request = new \Illuminate\Http\Request(['message' => $userPrompt]);
-        $controller = app(\App\Http\Controllers\ChatController::class);
-        $json = $controller->send($request);
-        $data = method_exists($json, 'getData') ? $json->getData(true) : (array)$json;
-        $aiText = $data['content'] ?? ($data['message'] ?? '');
+
+        $service = new ChatService();
+
+        $uuid = $this->conversationId ?? Str::uuid()->toString();
+        $session = \App\Models\ChatSession::firstOrCreate(
+            ['uuid' => $uuid, 'user_id' => auth()->id()],
+            ['title' => Str::limit($this->prompt, 80)]
+        );
+
+        \App\Models\ChatMessage::create([
+            'chat_session_id' => $session->id,
+            'role' => 'user',
+            'content' => $this->prompt,
+        ]);
+
+        $result = $service->respond($this->prompt, [], [
+            'stream' => true,
+//            'on_chunk' => function ($text) {
+//                echo 'data: ' . str_replace(["\r", "\n"], ' ', $text) . "\n\n";
+//                if (function_exists('ob_flush')) {
+//                    ob_flush();
+//                }
+//                flush();
+//            },
+        ]);
+
+        $this->prompt = '';
+
+        $aiText = $result['content'] ?? ($result['message'] ?? '');
+        $this->streamedContent .= $aiText;
         if ($aiText !== '') {
-            $this->messages[] = ['role' => 'bot', 'text' => $aiText];
+            $this->messages[] = ['role' => 'bot', 'text' => $this->streamedContent];
+            $this->stream(
+                to: 'streamed-answer',
+                content: $this->streamedContent,
+                replace: true,
+            );
         }
+
+        \App\Models\ChatMessage::create([
+            'chat_session_id' => $session->id,
+            'role' => 'assistant',
+            'content' => (string)($result['content'] ?? ''),
+            'model' => (string)($result['model'] ?? ''),
+        ]);
+
     } catch (\Throwable $e) {
         $this->messages[] = ['role' => 'bot', 'text' => 'Sorry, something went wrong. <br>'.$e->getMessage()];
 
         LivewireAlert::title('Error!')
-        ->error()
-        ->show();
+            ->error()
+            ->show();
     }
 
     $id = $this->conversationId ?? 'default';
     $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "'); if(el){el.scrollTop=el.scrollHeight;}})();");
 };
 
+// Handle the streamed response
+$handleStream = function ($chunk) {
+    $this->streamedContent .= $chunk;
 
-// Helper function to simulate the AI response (Replace this with your ChatController call)
-$simulateAiResponse = function (string $prompt): string {
-    // --- THIS IS WHERE YOU INTEGRATE YOUR CHAT CONTROLLER ---
-
-    // Example logic to demonstrate a dynamic response:
-    if (stripos($prompt, 'volt') !== false) {
-        return "Laravel Volt is a functional API for Livewire that supports single-file components. It helps reduce boilerplate and keeps PHP logic and Blade templates colocated.";
-    } elseif (stripos($prompt, 'strategy') !== false) {
-        return "The Strategy Design Pattern is excellent for handling interchangeable AI services (like Gemini, OpenAI, etc.) in your ChatController! You can switch implementations easily.";
+    // Update the last message (bot message) with streamed content
+    $lastIndex = count($this->messages) - 1;
+    if ($lastIndex >= 0 && isset($this->messages[$lastIndex]['role']) && $this->messages[$lastIndex]['role'] === 'bot') {
+        $this->messages[$lastIndex]['text'] = $this->streamedContent;
     }
 
-    return "Thank you for asking! I've processed your request: \"{$prompt}\". A full answer would be generated by your integrated ChatController now.";
+    $this->js("scrollToBottom('{$this->conversationId}')");
+};
+
+// Handle stream completion
+$streamComplete = function () {
+    $this->isStreaming = false;
+
+    // Remove streaming flag from the last message
+    $lastIndex = count($this->messages) - 1;
+    if ($lastIndex >= 0 && isset($this->messages[$lastIndex]['role']) && $this->messages[$lastIndex]['role'] === 'bot') {
+        unset($this->messages[$lastIndex]['streaming']);
+
+        // Save the completed message to database
+        try {
+            $session = \App\Models\ChatSession::firstOrCreate(
+                ['uuid' => $this->conversationId],
+                ['user_id' => auth()->id(), 'uuid' => $this->conversationId]
+            );
+
+            // Save user message (second to last)
+            if (count($this->messages) >= 2) {
+                $userMessage = $this->messages[count($this->messages) - 2];
+                \App\Models\ChatMessage::create([
+                    'chat_session_id' => $session->id,
+                    'role' => 'user',
+                    'content' => $userMessage['text']
+                ]);
+            }
+
+            // Save bot message (last)
+            $botMessage = $this->messages[count($this->messages) - 1];
+            \App\Models\ChatMessage::create([
+                'chat_session_id' => $session->id,
+                'role' => 'bot',
+                'content' => $botMessage['text']
+            ]);
+
+        } catch (\Throwable $e) {
+            \Log::error('Failed to save chat message: ' . $e->getMessage());
+        }
+    }
+};
+
+// Handle stream error
+$streamError = function ($error) {
+    $this->isStreaming = false;
+
+    // Update the last message with error
+    $lastIndex = count($this->messages) - 1;
+    if ($lastIndex >= 0 && isset($this->messages[$lastIndex]['role']) && $this->messages[$lastIndex]['role'] === 'bot') {
+        $this->messages[$lastIndex]['text'] = 'Sorry, there was an error processing your request. Please try again.';
+        unset($this->messages[$lastIndex]['streaming']);
+    }
+
+    LivewireAlert::title('Stream Error!')
+        ->error()
+        ->show();
+
+    $this->js("scrollToBottom('{$this->conversationId}')");
 };
 
 ?>
@@ -140,11 +249,33 @@ $simulateAiResponse = function (string $prompt): string {
                                     $html = render_markdown($m['text'] ?? '');
                                 @endphp
                                 {!! $html !!}
+
+                                @if(($m['streaming'] ?? false) && $isStreaming)
+                                    <div class="inline-block ml-1 typing-indicator">
+                                        <span class="dot"></span>
+                                        <span class="dot"></span>
+                                        <span class="dot"></span>
+                                    </div>
+                                @endif
                             </div>
                         </div>
                     </div>
                 @endforeach
             </div>
+
+            @if($isStreaming)
+                <div class="flex justify-start">
+                    <div class="bg-neutral-100 dark:bg-neutral-800 rounded-2xl px-4 py-3 shadow-sm">
+                        <div class="typing-indicator">
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                            <span class="dot"></span>
+                        </div>
+                    </div>
+                </div>
+            @endif
+
+            <span wire:stream="streamed-answer">{!! $streamedContent !!}</span>
 
             <div id="typingIndicator-{{ $conversationId ?? 'default' }}" class="hidden"></div>
 
@@ -153,7 +284,13 @@ $simulateAiResponse = function (string $prompt): string {
 
         <div class="mt-6">
 
-            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">
+            <form id="chatForm-{{ $conversationId ?? 'default' }}"
+                  wire:submit="send"
+                  wire:stream="handleStream"
+                  wire:stream.complete="streamComplete"
+                  wire:stream.error="streamError"
+            >
+{{--            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">--}}
 
                 @csrf
 
@@ -163,31 +300,29 @@ $simulateAiResponse = function (string $prompt): string {
                         class="flex items-center bg-neutral-100 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-xl shadow-sm">
 
                         <input
-
                             type="text"
                             wire:model="prompt"
-
                             id="messageInput-{{ $conversationId ?? 'default' }}"
-
-                            placeholder="write something.."
-
+                            placeholder="Write something..."
                             class="flex-1 bg-transparent border-none focus:outline-none w-full text-gray-700 dark:text-white placeholder:text-neutral-400 px-4 py-3"
-
                             autocomplete="off"
-
+                            @if($isStreaming) disabled @endif
                         >
+
 
                         <button
 
                             type="submit"
-
+                            @if($isStreaming) disabled @endif
                             id="sendButton-{{ $conversationId ?? 'default' }}"
-
                             class="m-2 px-5 h-9 rounded-md bg-neutral-200 hover:bg-neutral-300 hover:cursor-pointer dark:bg-neutral-900 text-neutral-900 dark:text-neutral-500 flex items-center justify-center transition-colors"
-
                         >
 
-                            <i class="fas fa-arrow-up"></i>
+                            @if($isStreaming)
+                                <i class="fas fa-spinner fa-spin"></i>
+                            @else
+                                <i class="fas fa-arrow-up"></i>
+                            @endif
 
                             send
 
@@ -207,10 +342,28 @@ $simulateAiResponse = function (string $prompt): string {
 
 <script>
     // Simple JavaScript to ensure the chat scrolls to the bottom on load
+    function scrollToBottom(conversationId) {
+        const id = conversationId || 'default';
+        const chatContainer = document.getElementById('chatContainer-' + id);
+        if (chatContainer) {
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+    }
     window.onload = function () {
         const chatContainer = document.getElementById('chatContainer-{{ $conversationId ?? 'default' }}');
         if (chatContainer) {
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
     };
+
+    // Livewire stream event listeners
+    document.addEventListener('livewire:initialized', () => {
+        const component = @this;
+
+        // Handle stream chunks
+        component.on('stream-chunk', (chunk) => {
+            // This is handled automatically by wire:stream
+            scrollToBottom('{{ $conversationId ?? 'default' }}');
+        });
+    });
 </script>

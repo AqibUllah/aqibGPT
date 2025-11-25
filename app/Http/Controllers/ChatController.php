@@ -39,14 +39,12 @@ class ChatController extends Controller
 
         return response()->stream(function () use ($service, $data) {
             try {
-                Log::info($data);
                 $user = auth()->user();
                 $uuid = $data['conversation_id'] ?? Str::uuid()->toString();
                 $session = ChatSession::firstOrCreate(
                     ['uuid' => $uuid, 'user_id' => $user->id],
                     ['title' => Str::limit($data['message'], 80)]
                 );
-                Log::info('session:'.$session);
 
                 ChatMessage::create([
                     'chat_session_id' => $session->id,

@@ -3,7 +3,38 @@
 
 <head>
     @include('partials.head')
-    @notifyCss
+    <style>
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: currentColor;
+            opacity: 0.6;
+            animation: typing-bounce 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing-bounce {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+    </style>
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
@@ -130,9 +161,7 @@
 
     {{ $slot }}
 
-    <x-notify::notify />
     @fluxScripts
-    @notifyJs
 </body>
 
 </html>
