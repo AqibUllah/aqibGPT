@@ -2,24 +2,74 @@
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="dark">
     <head>
         @include('partials.head')
+        <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"
+          integrity="sha512-7GXQ6ZVRdLa5h0nOJXjC5t1ugGTkEi/LgdLLUJhhJi5CdqlsD38GmOOJue5MgnNoJehDR7yxoK4J3ZpC2yM0Yg=="
+          crossorigin="anonymous" referrerpolicy="no-referrer" />
         <style>
-            .bot-stream {
-                white-space: pre-wrap;
-                word-break: break-word;
+            .chat-message pre {
+        margin: 1rem auto 0;
+        border-radius: 1.25rem;
+        padding: 1.25rem 1.5rem;
+        background: linear-gradient(135deg, #0f172a, #1f2937);
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        box-shadow: 0 20px 35px rgba(15, 23, 42, 0.35);
+        color: #e2e8f0;
+        font-size: 0.95rem;
+        line-height: 1.7;
+        font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, monospace;
+        overflow-x: auto;
+        text-align: left;
+    }
+
+    .chat-message pre code {
+        background: transparent;
+        padding: 0;
+        border: none;
+        color: inherit;
+        display: block;
+        white-space: pre;
+        text-align: left;
+    }
+
+    .chat-message code:not(pre code) {
+        background: rgba(15, 23, 42, 0.85);
+        padding: 0.1rem 0.35rem;
+        border-radius: 0.35rem;
+        border: 1px solid rgba(148, 163, 184, 0.4);
+        font-family: 'JetBrains Mono', 'Fira Code', 'SFMono-Regular', Menlo, monospace;
+        font-size: 0.9rem;
+        color: #e2e8f0;
+    }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 2px;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: currentColor;
+            opacity: 0.6;
+            animation: typing-bounce 1.4s infinite ease-in-out;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing-bounce {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
             }
-            pre {
-                background: #1e1e1e;
-                color: #e5e5e5;
-                padding: 12px;
-                border-radius: 8px;
-                overflow-x: auto;
-                margin-top: 6px;
-                margin-bottom: 6px;
+            40% {
+                transform: scale(1);
+                opacity: 1;
             }
-            code {
-                font-size: 0.9rem;
-                font-family: Consolas, monospace;
-            }
+        }
         </style>
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
@@ -29,16 +79,6 @@
             <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
                 <x-app-logo />
             </a>
-
-            <form method="POST" action="{{ route('ai.model.set') }}" class="w-44">
-                @csrf
-                @php($currentModel = session('ai_model', config('ai.default')))
-                <flux:select name="ai_model" size="sm" class="w-44" onchange="this.form.submit()">
-                    <option value="ai-studio" {{ $currentModel === 'ai-studio' ? 'selected' : '' }}>Ai Studio</option>
-                    <option value="gemini" {{ $currentModel === 'gemini' ? 'selected' : '' }}>Gemini</option>
-                    <option value="openai" {{ $currentModel === 'openai' ? 'selected' : '' }}>OpenAI</option>
-                </flux:select>
-            </form>
 
             @php($sessions = \App\Models\ChatSession::where('user_id', auth()->id())->latest()->limit(50)->get())
             <div class="mt-4">
@@ -178,5 +218,9 @@
         {{ $slot }}
 
         @fluxScripts
+
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"
+            integrity="sha512-ZZTLoV7GjKo1GuYHS6VKOtZZYbNyp9RA38boz+TLU6X0tIr2QTTNo5Lnnpj6AWV2QJCLuY84RjCjbRi3jumlHw=="
+            crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     </body>
 </html>
