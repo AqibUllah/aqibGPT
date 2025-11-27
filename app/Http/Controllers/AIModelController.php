@@ -9,7 +9,7 @@ class AIModelController extends Controller
     public function set(Request $request)
     {
         $request->validate([
-            'ai_model' => 'required|in:ai-studio,gemini,openai',
+            'ai_model' => 'required|in:ai-studio,gemini,openai,ollama',
         ]);
 
         session(['ai_model' => $request->string('ai_model')->toString()]);

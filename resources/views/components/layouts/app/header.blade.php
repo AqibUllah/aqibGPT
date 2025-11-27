@@ -11,7 +11,7 @@
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:header sticky class="dark:bg-zinc-700 fixed top-0">
+    <flux:header sticky class="fixed top-0">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <flux:navbar class="max-lg:hidden me-2">
@@ -19,7 +19,7 @@
                 @csrf
                 @php($currentModel = session('ai_model', config('ai.default')))
                 <flux:select name="ai_model" size="lg" class="w-44" onchange="this.form.submit()">
-                    <option value="ai-studio" {{ $currentModel === 'ai-studio' ? 'selected' : '' }}>Ai Studio</option>
+                    <option value="ollama" {{ $currentModel === 'ollama' ? 'selected' : '' }}>Ollama</option>
                     <option value="gemini" {{ $currentModel === 'gemini' ? 'selected' : '' }}>Gemini</option>
                     <option value="openai" {{ $currentModel === 'openai' ? 'selected' : '' }}>OpenAI</option>
                 </flux:select>

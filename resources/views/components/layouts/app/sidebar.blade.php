@@ -11,8 +11,7 @@
         margin: 1rem auto 0;
         border-radius: 1.25rem;
         padding: 1.25rem 1.5rem;
-        background: linear-gradient(135deg, #0f172a, #1f2937);
-        border: 1px solid rgba(148, 163, 184, 0.4);
+        background: #32343a;
         box-shadow: 0 20px 35px rgba(15, 23, 42, 0.35);
         color: #e2e8f0;
         font-size: 0.95rem;
@@ -71,17 +70,24 @@
             }
         }
 
-        #sessionsList > nav > div > div > a{
+        #sessionsList > nav > div > div > div > a{
             background: rgba(0, 0, 0, .1);
             border: none;
             padding: 10px;
             height: 45px;
             color: white;
-            margin-bottom: 2px
+            margin-bottom: 5px
+        }
+
+        #sessionsList > nav > div > div > div.active {
+            background: rgba(0, 0, 0, .3);
+        }
+        #sessionsList > nav > div > div > div.active .leading-none {
+            color: white !important;
         }
 
         #sessionsList .leading-none{
-            color: black;
+            color: #2a2828;
         }
 
         </style>
@@ -110,10 +116,14 @@
                     <flux:navlist variant="outline">
                         <flux:navlist.group :heading="__('my chats')" class="grid">
                             @forelse($sessions as $s)
-                                <flux:navlist.item href="{{ route('dashboard', ['session' => $s->uuid]) }}" icon="chat-bubble-bottom-center-text"  :current="$s->title == request()->get('session')" wire:navigate>
+                                <div class="{{ $s->uuid == request()->get('session') ? 'active rounded-lg' : '' }}">
+
+                                <flux:navlist.item href="{{ route('dashboard', ['session' => $s->uuid]) }}" icon="chat-bubble-bottom-center-text"  :current="$s->uuid == request()->get('session')" wire:navigate>
                                     {{ $s->title ?? \Illuminate\Support\Str::limit($s->uuid, 8) }}
-                                    <p class="text-[11px] my-1 text-gray-300 font-normal">{{  $s->created_at->format('d-m-Y H:i A') }}</p>
+                                    <p class="text-[11px] my-1 text-gray-300 font-normal">{{  $s->created_at->format('d-m-Y h:i A') }}</p>
                                 </flux:navlist.item>
+                                </div>
+
                                 @empty
                                 <div class="text-sm text-zinc-500">{{ __('No chats yet') }}</div>
                             @endforelse
@@ -125,7 +135,7 @@
             <flux:spacer />
 
             <!-- Desktop User Menu -->
-            <flux:dropdown class="hidden lg:block fixed bottom-0 bg-accent-content" sticky position="bottom" align="start">
+            <flux:dropdown class="hidden lg:block fixed bottom-10" sticky position="bottom" align="start">
                 <flux:profile
                     :name="auth()->user()->name"
                     :initials="auth()->user()->initials()"

@@ -4,6 +4,8 @@ namespace App\Services\AI\Strategies;
 
 use App\Services\AI\Contracts\ChatModelStrategy;
 use Gemini\Laravel\Facades\Gemini;
+use Gemini\Data\Blob;
+use Gemini\Enums\MimeType;
 
 class GeminiStrategy implements ChatModelStrategy
 {
@@ -14,11 +16,25 @@ class GeminiStrategy implements ChatModelStrategy
         $this->config = $config;
     }
 
-    public function respond(string $prompt, array $context = [], array $options = []): array
+    public function respond(string $prompt, array $context = [], array $options = [], array $attachments = []): array
     {
         $model = $this->config['model'] ?? 'gemini-2.0-flash';
         $stream = ($options['stream'] ?? false) === true;
         $onChunk = $options['on_chunk'] ?? null;
+
+        if($attachments){
+            $prompt = [$prompt];
+            foreach ($attachments as $key => $attachment) {
+                $prompt[] = new Blob(
+                    mimeType: MimeType::IMAGE_JPEG,
+                    data: base64_encode(
+                        file_get_contents($attachment)
+                    )
+                );
+            }
+
+        }
+
         if ($stream) {
             $buffer = '';
             foreach (Gemini::generativeModel(model: $model)->streamGenerateContent($prompt) as $response) {

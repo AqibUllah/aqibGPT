@@ -8,8 +8,6 @@ use Jantinnerezo\LivewireAlert\Facades\LivewireAlert;
 use League\CommonMark\CommonMarkConverter;
 use App\Services\AI\ChatService;
 use Livewire\WithFileUploads;
-use Gemini\Data\Blob;
-use Gemini\Enums\MimeType;
 
 new class extends Component {
 
@@ -116,18 +114,14 @@ $ask = function()
             'allow_unsafe_links' => false,
         ]);
 
+        $prepared_attachments = [];
         if($this->attachments){
-            $this->prompt = [$this->prompt];
-
             foreach ($this->attachments as $key => $attachment) {
-                $this->prompt[] = new Blob(
-                    mimeType: MimeType::IMAGE_JPEG,
-                    data: base64_encode(
-                        file_get_contents($attachment->getRealPath())
-                    )
-                );
+                $filename = time().'-attachment.'.$attachment->getClientOriginalExtension();
+                $attachment->storeAs('attachments', $filename,'public');
+                $prepared_attachments[] = public_path(
+                    'storage/attachments/'.$filename);
             }
-
         }
 
         $result = $service->respond($this->prompt, [], [
@@ -148,13 +142,10 @@ $ask = function()
 
                 $this->js("scrollToBottom('{$this->conversationId}')");
             },
-        ]);
+        ],$prepared_attachments);
 
         $this->prompt = '';
-
-        // Store in the "photos" directory with the filename "avatar.png".
-
-        // $this->attachment->storeAs('attachments', 'avatar');
+        $this->attachments = [];
 
         $aiText = $result['content'] ?? ($result['message'] ?? '');
         $lastIndex = count($this->messages) - 1;
@@ -257,9 +248,7 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
                 </div>
             @endif
 
-            <span wire:stream="streamed-answer" class="text-left">{!! $streamedContent !!}</span>
-
-            <!-- <div id="typingIndicator-{{ $conversationId ?? 'default' }}" class="hidden"></div> -->
+            <span wire:stream="streamed-answer" class="text-left"></span>
 
         </div>
 
@@ -303,7 +292,7 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
                         class="flex items-center bg-neutral-50 dark:bg-neutral-800 border border-neutral-100 dark:border-neutral-700 rounded-full shadow-xl">
                         <label
                             for="fileInput-{{ $conversationId ?? 'default' }}"
-                            class="m-1 p-2 rounded-full bg-gray-300 hover:bg-gray-400 hover:text-gray-100 cursor-pointer
+                            class="m-1 p-2 rounded-full bg-gray-300 hover:bg-gray-300 cursor-pointer
                                 dark:bg-white text-gray-800 dark:text-black flex items-center justify-center transition-colors"
                         >
                             @if($isStreaming)
@@ -340,7 +329,7 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
                             type="submit"
                             @if($isStreaming) disabled @endif
                             id="sendButton-{{ $conversationId ?? 'default' }}"
-                            class="m-1 p-2 rounded-full bg-black hover:bg-gray-900 hover:cursor-pointer dark:bg-white text-gray-200 dark:text-black flex items-center justify-center transition-colors"
+                            class="m-1 p-2 rounded-full bg-black hover:bg-gray-300 hover:cursor-pointer dark:bg-white text-gray-200 dark:text-black flex items-center justify-center transition-colors"
                         >
 
                             @if($isStreaming)

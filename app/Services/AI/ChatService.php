@@ -14,8 +14,8 @@ class ChatService
         $this->strategy = ChatModelFactory::make($provider);
     }
 
-    public function respond(string $prompt, array $context = [], array $options = []): array
+    public function respond(string $prompt, array $context = [], array $options = [], $attachments = []): array
     {
-        return $this->strategy->respond($prompt, $context, $options);
+        return $this->strategy->respond($prompt, $context, $options, $attachments);
     }
 }
