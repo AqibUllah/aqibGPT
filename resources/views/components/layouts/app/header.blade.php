@@ -11,14 +11,14 @@
 </head>
 
 <body class="min-h-screen bg-white dark:bg-zinc-800">
-    <flux:header sticky class="bg-zinc-50 dark:bg-zinc-700 fixed top-0">
+    <flux:header sticky class="dark:bg-zinc-700 fixed top-0">
         <flux:sidebar.toggle class="lg:hidden" icon="bars-2" inset="left" />
 
         <flux:navbar class="max-lg:hidden me-2">
             <form method="POST" action="{{ route('ai.model.set') }}">
                 @csrf
                 @php($currentModel = session('ai_model', config('ai.default')))
-                <flux:select name="ai_model" size="sm" class="w-44" onchange="this.form.submit()">
+                <flux:select name="ai_model" size="lg" class="w-44" onchange="this.form.submit()">
                     <option value="ai-studio" {{ $currentModel === 'ai-studio' ? 'selected' : '' }}>Ai Studio</option>
                     <option value="gemini" {{ $currentModel === 'gemini' ? 'selected' : '' }}>Gemini</option>
                     <option value="openai" {{ $currentModel === 'openai' ? 'selected' : '' }}>OpenAI</option>
@@ -30,9 +30,7 @@
 
         <!-- Desktop User Menu -->
         <flux:dropdown position="top" align="end">
-            <flux:profile
-                class="cursor-pointer"
-                :initials="auth()->user()->initials()" />
+            <flux:profile class="cursor-pointer" :initials="auth()->user()->initials()" />
 
             <flux:menu>
                 <flux:menu.radio.group>
@@ -56,14 +54,16 @@
                 <flux:menu.separator />
 
                 <flux:menu.radio.group>
-                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}</flux:menu.item>
+                    <flux:menu.item :href="route('profile.edit')" icon="cog" wire:navigate>{{ __('Settings') }}
+                    </flux:menu.item>
                 </flux:menu.radio.group>
 
                 <flux:menu.separator />
 
                 <form method="POST" action="{{ route('logout') }}" class="w-full">
                     @csrf
-                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full" data-test="logout-button">
+                    <flux:menu.item as="button" type="submit" icon="arrow-right-start-on-rectangle" class="w-full"
+                        data-test="logout-button">
                         {{ __('Log Out') }}
                     </flux:menu.item>
                 </form>
@@ -72,7 +72,8 @@
     </flux:header>
 
     <!-- Mobile Menu -->
-    <flux:sidebar stashable sticky class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+    <flux:sidebar stashable sticky
+        class="lg:hidden border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
         <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
         <form method="POST" action="{{ route('ai.model.set') }}">

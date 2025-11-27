@@ -70,56 +70,62 @@
                 opacity: 1;
             }
         }
+
+        #sessionsList > nav > div > div > a{
+            background: rgba(0, 0, 0, .1);
+            border: none;
+            padding: 10px;
+            height: 45px;
+            color: white;
+            margin-bottom: 2px
+        }
+
+        #sessionsList .leading-none{
+            color: black;
+        }
+
         </style>
     </head>
     <body class="min-h-screen bg-white dark:bg-zinc-800">
-        <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
-            <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
+        <flux:sidebar sticky stashable class="border-e border-zinc-200 bg-gradient-to-r from-fuchsia-500 to-cyan-500 dark:border-zinc-700 dark:bg-zinc-900">
+            <div class="relative top-0">
+                <flux:sidebar.toggle class="lg:hidden" icon="x-mark" />
 
-            <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
-                <x-app-logo />
-            </a>
+                <a href="{{ route('dashboard') }}" class="me-5 flex items-center space-x-2 rtl:space-x-reverse" wire:navigate>
+                    <x-app-logo />
+                </a>
 
-            @php($sessions = \App\Models\ChatSession::where('user_id', auth()->id())->latest()->limit(50)->get())
+                @php($sessions = \App\Models\ChatSession::where('user_id', auth()->id())->latest()->limit(50)->get())
+
+                <flux:navlist variant="outline">
+                    <flux:navlist.group :heading="__('new chat')" class="grid">
+                        <flux:navlist.item onclick="return newChat(event)" icon="pencil-square"  :current="request()->routeIs('dashboard')" wire:navigate>{{ __('New Chat') }}</flux:navlist.item>
+                    </flux:navlist.group>
+                </flux:navlist>
+            </div>
+
             <div class="mt-4">
-                <flux:heading size="md">{{ __('Your Chats') }}</flux:heading>
-                <div class="mt-2 flex items-center gap-2">
-                    <button type="button" onclick="return newChat(event)" class="inline-flex items-center gap-2 px-2 py-1 rounded bg-zinc-200 hover:bg-zinc-300 dark:bg-zinc-800 dark:hover:bg-zinc-700">
-                        <span class="inline-block w-4 h-4">+</span>
-                        <span>{{ __('New Chat') }}</span>
-                    </button>
-                </div>
-                <div id="sessionsList" class="mt-2 space-y-1">
-                    @forelse($sessions as $s)
-                        <a href="{{ route('dashboard', ['session' => $s->uuid]) }}" class="block px-2 py-1 rounded hover:bg-zinc-200 dark:hover:bg-zinc-800" wire:navigate>
-                            {{ $s->title ?? \Illuminate\Support\Str::limit($s->uuid, 8) }}
-                        </a>
-                    @empty
-                        <div class="text-sm text-zinc-500">{{ __('No chats yet') }}</div>
-                    @endforelse
+
+                <div id="sessionsList" class="mt-2 space-y-1 ">
+                    <flux:navlist variant="outline">
+                        <flux:navlist.group :heading="__('my chats')" class="grid">
+                            @forelse($sessions as $s)
+                                <flux:navlist.item href="{{ route('dashboard', ['session' => $s->uuid]) }}" icon="chat-bubble-bottom-center-text"  :current="$s->title == request()->get('session')" wire:navigate>
+                                    {{ $s->title ?? \Illuminate\Support\Str::limit($s->uuid, 8) }}
+                                    <p class="text-[11px] my-1 text-gray-300 font-normal">{{  $s->created_at->format('d-m-Y H:i A') }}</p>
+                                </flux:navlist.item>
+                                @empty
+                                <div class="text-sm text-zinc-500">{{ __('No chats yet') }}</div>
+                            @endforelse
+                        </flux:navlist.group>
+                    </flux:navlist>
                 </div>
             </div>
 
-            <flux:navlist variant="outline">
-                <flux:navlist.group :heading="__('Platform')" class="grid">
-                    <flux:navlist.item icon="home" :href="route('dashboard')" :current="request()->routeIs('dashboard')" wire:navigate>{{ __('Dashboard') }}</flux:navlist.item>
-                </flux:navlist.group>
-            </flux:navlist>
-
             <flux:spacer />
 
-            <flux:navlist variant="outline">
-                <flux:navlist.item icon="folder-git-2" href="https://github.com/laravel/livewire-starter-kit" target="_blank">
-                {{ __('Repository') }}
-                </flux:navlist.item>
-
-                <flux:navlist.item icon="book-open-text" href="https://laravel.com/docs/starter-kits#livewire" target="_blank">
-                {{ __('Documentation') }}
-                </flux:navlist.item>
-            </flux:navlist>
-
             <!-- Desktop User Menu -->
-            <flux:dropdown class="hidden lg:block" position="bottom" align="start">
+            <flux:dropdown class="hidden lg:block fixed bottom-0 bg-accent-content" sticky position="bottom" align="start">
                 <flux:profile
                     :name="auth()->user()->name"
                     :initials="auth()->user()->initials()"
