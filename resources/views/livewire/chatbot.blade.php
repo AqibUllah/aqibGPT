@@ -27,9 +27,7 @@ new class extends Component {
 
         $this->messages = collect([]);
 
-        // 2. Load existing or default messages
         if (is_null($this->messages)) {
-            // We initialize messages as a Collection for easy handling and pre-load a welcome message
             $this->messages = Collection::make([
                 ['role' => 'bot', 'text' => 'Hello! I am your AI assistant. How can I help you today?'],
             ]);
@@ -56,19 +54,18 @@ mount(function () {
     }
 });
 
-// Rules for input validation
+
 rules(['prompt' => ['required', 'string', 'max:2000']]);
+
 
 // --- Actions ---
 
 $removeAttachments = (fn($index) => array_splice($this->attachments,$index,1));
 
-// The core action to send the message and get the AI response
 $send = function () {
     $this->validate([
         'prompt' => 'required|string',
-        'attachments.*' => 'nullable|image|max:1024', // 1MB Max
-//        'conversationId' => 'nullable|string',
+        'attachments.*' => 'nullable|image|max:1024',
     ]);
 
     $this->prompt = trim($this->prompt);
@@ -79,9 +76,6 @@ $send = function () {
     $this->messages[] = ['role' => 'user', 'text' => $this->prompt];
     $this->isStreaming = true;
     $this->streamedContent = '';
-
-    // Add placeholder for bot message
-    // $this->messages[] = ['role' => 'bot', 'text' => '', 'streaming' => true];
 
     $this->js('$wire.ask()');
 
@@ -247,22 +241,15 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
                     </div>
                 </div>
             @endif
-
             <span wire:stream="streamed-answer" class="text-left"></span>
-
         </div>
 
-
         <div class="mt-6 relative">
-
             <form id="chatForm-{{ $conversationId ?? 'default' }}"
                   wire:submit="send"
                   class="my-6 {{ isset($messages) && count($messages) > 0 ? 'fixed bottom-0' : '' }} max-w-2xl w-full
             >
-{{--            <form id="chatForm-{{ $conversationId ?? 'default' }}" onsubmit="return sendMessage(event, '{{ $conversationId ?? 'default' }}')">--}}
-
                 @csrf
-
                 <div class="relative">
                     <div class="relative inline-block">
                         @if ($attachments && count($attachments) > 0)
@@ -273,13 +260,12 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
                                             class="w-10 h-10 border-2 rounded-lg object-cover"
                                             src="{{ $attachment->temporaryUrl() }}"
                                         >
-
                                         <button
                                             wire:click="removeAttachments({{ $index }})"
                                             type="button"
                                             class="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs hover:bg-red-700"
                                         >
-                                            ×
+                                            <flux:icon.trash />
                                         </button>
                                     </div>
                                 @endforeach
@@ -356,7 +342,7 @@ $this->js("(function(){var el=document.getElementById('chatContainer-" . $id . "
 </div>
 
 <script>
-    // Simple JavaScript to ensure the chat scrolls to the bottom on load
+
     function scrollToBottom(conversationId) {
         const id = conversationId || 'default';
         const chatContainer = document.getElementById('chatContainer-' + id);
