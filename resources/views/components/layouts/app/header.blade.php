@@ -19,7 +19,7 @@
                 @csrf
                 @php($currentModel = session('ai_model', config('ai.default')))
                 <flux:select name="ai_model" size="lg" class="w-44" onchange="this.form.submit()">
-                    <option value="ollama" {{ $currentModel === 'ollama' ? 'selected' : '' }}>Ollama</option>
+                    <option value="ollama" {{ $currentModel === 'ollama' ? 'selected' : '' }}>DeepSeek</option>
                     <option value="gemini" {{ $currentModel === 'gemini' ? 'selected' : '' }}>Gemini</option>
                     <option value="openai" {{ $currentModel === 'openai' ? 'selected' : '' }}>OpenAI</option>
                 </flux:select>

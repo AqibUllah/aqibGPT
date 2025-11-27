@@ -14,7 +14,7 @@ class OpenAIStrategy implements ChatModelStrategy
         $this->config = $config;
     }
 
-    public function respond(string $prompt, array $context = [], array $options = []): array
+    public function respond(string $prompt, array $context = [], array $options = [], array $attachments = []): array
     {
         $model = $this->config['model'] ?? 'gpt-4o-mini';
         $stream = ($options['stream'] ?? false) === true;
